@@ -23,7 +23,7 @@ load_list_of_modules() {
             baseResuult+="$file"
         fi
         arr+=("$baseResuult")
-    done < <(find "$COMMANDS_DIR" -type f -name "*.sh" -print0)
+    done < <(find "$COMMANDS_DIR" -type f -name "*.sh"  -not -path '*/.*' -print0)
 }
 
 resolve_module() {
