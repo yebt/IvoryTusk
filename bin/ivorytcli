@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+# Config
+## ----------------------------------
+set -e
+
+IVORYTCLI_WORKDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
+COMMANDS_DIR="$IVORYTCLI_WORKDIR/commands"
+
+export IVORYTCLI_WORKDIR
+
+# shellcheck source=/dev/null
+. "$IVORYTCLI_WORKDIR/modules/common"
+. "$IVORYTCLI_WORKDIR/modules/dependencies"
+. "$IVORYTCLI_WORKDIR/modules/resolver"
+. "$IVORYTCLI_WORKDIR/modules/helper"
+
+# Funcntions
+## ----------------------------------
+
+
+# Calls
+## ----------------------------------
+
+if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    cli_help
+fi
+
+call_command_run "$@"

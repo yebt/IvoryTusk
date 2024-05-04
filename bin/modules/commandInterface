@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# load the help param
+show_help() {
+	echo -e "$HELP_TEXT"
+}
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+	show_help
+	exit 0
+fi
+
+# TODO
+# [ ] try to run expand helper, to show all available args in the command
+# [ ] run with 0 args to find if has required args
+# [ ] run with args
