@@ -10,6 +10,8 @@
 - Container Manager (Docker or Podman)
 - Bash (To execute some scripts)
 
+- [gum](https://github.com/charmbracelet/gum)
+
 ## TODO
 
 - [ ] Create a command facade, as an interface to interact with the artisan or other containers

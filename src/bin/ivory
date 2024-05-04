@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+if ! command -v gum &>/dev/null; then
+    echo "gum is required"
+    echo "see: https://github.com/charmbracelet/gum"
+    exit 1
+fi
+
+# Settings
+# ---------------------------------------------------------
+
+MODULES_DIR="modules"
+
+# Static Vars
+# ---------------------------------------------------------
+
+SCRIPT_NAME="ivory"
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+MODULES_DIR="$SCRIPT_DIR/$MODULES_DIR"
+
+# loaded_modules=("module1")
+
+# Functions base
+# ---------------------------------------------------------
+
+
+resolve_module() {
+    command_name=$1
+    IFS=":" read -ra command_array <<< "$command_name"
+    module=${command_array[0]}
+    command=${command_array[1]}
+
+    caller="$MODULES_DIR/$module"
+    if [ -n "$command" ]; then
+        caller="$caller/$command"
+    fi
+    caller="$caller.sh"
+    echo "$caller"
+}
+call_command_help(){ 
+    caller="$(resolve_module "$1")"
+    echo -e "\t $(sh "$caller" -h)"
+}
+
+show_help() {
+    result=()
+    while IFS= read -r -d '' file; do
+        baseResuult=""
+        file="${file##$MODULES_DIR/}"
+        file="${file%.sh}"
+        if [[ $file == */* ]]; then
+            baseResuult+="$(dirname "$file"):"
+            baseResuult+=$(basename "$file")
+        else
+            baseResuult+="$file"
+        fi
+        result+=("$baseResuult")
+    done < <(find "$MODULES_DIR" -type f -name "*.sh" -print0)
+
+    echo -e "Usage: $SCRIPT_NAME [command]"
+    echo -e "Allowed commands:"
+    for module in "${result[@]}"; do
+        # echo "$module"
+        call_command_help "$module"
+    done
+}
+
+
+if [ $# -eq 0 ]; then
+    show_help
+    exit 1
+fi
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    show_help
+    exit 0
+fi
+
+command_to_run="$(resolve_module "$1")"
+
+# command_found=false
