@@ -1,16 +1,416 @@
 #!/usr/bin/env bash
 
+. "$IVORYTCLI_WORKDIR/modules/colors"
+
 # load the help param
-show_help() {
+minimal_help() {
 	echo -e "$HELP_TEXT"
 }
 
-if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-	show_help
+# ------------------------------------------------------
+
+if [ "$#" -eq 0 ] ||
+	[ "$1" != "-cr" ] && [ "$1" != "--crun" ] &&
+	[ "$1" != "-ch" ] && [ "$1" != "--chelp" ]; then
+	error "Missing '-cr' (running flag) or '-ch' (help flag) for call flags"
+	minimal_help
+	exit 1
+fi
+
+if [ "$1" = "-ch" ] || [ "$1" = "--chelp" ]; then
+	minimal_help
 	exit 0
+else
+	shift # shift the -r flag
+fi
+
+ARGS="${ARGS:-()}"
+FLAGS="${FLAGS:-()}"
+
+# aux
+# ------------------------------------------------------
+
+has_required_args() {
+	for arg_config in "${ARGS[@]}"; do
+		IFS=';' read -r -a arg_parts <<<"$arg_config"
+		for part in "${arg_parts[@]}"; do
+			if [[ $part == required:* ]]; then
+				return 1
+			fi
+		done
+	done
+	return 0
+}
+
+has_required_flags() {
+	for flag_config in "${FLAGS[@]}"; do
+		IFS=';' read -r -a flag_parts <<<"$flag_config"
+		for part in "${flag_parts[@]}"; do
+			if [[ $part == required:* ]]; then
+				return 1
+			fi
+		done
+	done
+	return 0
+}
+
+get_arg_key() {
+	arg_str="$1"
+	arg_key="$2"
+
+	IFS=';' read -r -a arg_parts <<<"$arg_str"
+	for part in "${arg_parts[@]}"; do
+		if [[ $part == $arg_key:* ]]; then
+			echo "${part#*:}"
+			break
+		fi
+	done
+}
+
+# ------------------------------------------------------
+LOADED_ARGS=()
+LOADED_ARGS_HELPS=()
+LOADED_FLAGS_HELPS=()
+longuest_arg_name_length=0
+
+GIVED_ARGS=()
+GIVED_FLAGS=()
+
+# calls
+# ------------------------------------------------------
+
+process_args() {
+	local arg
+	for arg; do
+		if [[ $arg == --* ]]; then
+			echo -n "${arg/--/=}"
+		elif [[ $arg == -* ]]; then
+			echo -n "${arg/-/=}"
+		else
+			echo -n "$arg"
+		fi
+		echo -n " "
+	done
+	echo
+}
+
+# make_declarations() - Travels through the ARGS and FLAGS arrays and creates declarations based on their contents.
+#
+# This function iterates through each element in the ARGS and FLAGS arrays and creates declarations based on their contents.
+# For each element, it extracts the relevant information such as the name, help, default value, required status, and more.
+# The declarations are exported as environment variables using the "export" command.
+# The function also populates the LOADED_ARGS and LOADED_ARGS_HELPS arrays with the names and help texts of the arguments.
+# Additionally, it populates the LOADED_FLAGS_HELPS array with the names and help texts of the flags.
+#
+# Parameters:
+#   None
+#
+# Returns:
+#   None
+make_declarations() {
+	# travel args
+	for arg_config in "${ARGS[@]}"; do
+		IFS=';' read -r -a arg_parts <<<"$arg_config"
+		arg_name=""
+		arg_help=""
+		for part in "${arg_parts[@]}"; do
+			if [[ $part == name:* ]]; then
+				arg_name=${part#*:}
+				export "arg_${arg_name}"=""
+			elif [[ $part == help:* ]]; then
+				arg_help=${part#*:}
+				export "arg_${arg_name}_help"="$arg_help"
+			elif [[ $part == default:* ]]; then
+				arg_default=${part#*:}
+				export "arg_${arg_name}_default"="$arg_default"
+			elif [[ $part == required:* ]]; then
+				arg_required=${part#*:}
+				export "arg_${arg_name}_required"="$arg_required"
+			fi
+		done
+		if [[ -n "$arg_name" ]] && [[ -n "$arg_help" ]]; then
+			LOADED_ARGS+=("$arg_name")
+			LOADED_ARGS_HELPS+=("$arg_name:$arg_help")
+			longuest_arg_name_length=$((${#arg_name} > longuest_arg_name_length ? ${#arg_name} : longuest_arg_name_length))
+		fi
+	done
+
+	# travel flags
+	for flag_config in "${FLAGS[@]}"; do
+		IFS=';' read -r -a flag_parts <<<"$flag_config"
+		flag_long=""
+		flag_short=""
+		flag_help=""
+		for part in "${flag_parts[@]}"; do
+			if [[ $part == long:* ]]; then
+				flag_long=${part#*:}
+				export "flag_${flag_long}"=""
+			elif [[ $part == short:* ]]; then
+				flag_short=${part#*:}
+				export "flag_${flag_long}_short"="$flag_short"
+				export "flag_${flag_short}"="$flag_long"
+			elif [[ $part == help:* ]]; then
+				flag_help=${part#*:}
+				export "flag_${flag_long}_help"="$flag_help"
+			elif [[ $part == arg:* ]]; then
+				flag_arg=${part#*:}
+				export "flag_${flag_long}_arg"="$flag_arg"
+			elif [[ $part == default:* ]]; then
+				flag_default=${part#*:}
+				export "flag_${flag_long}_default"="$flag_default"
+			elif [[ $part == required:* ]]; then
+				flag_required=${part#*:}
+				export "flag_${flag_long}_required"="$flag_required"
+			elif [[ $part == conflicts:* ]]; then
+				flag_conflicts=${part#*:}
+				local rslt=()
+				if [[ $flag_conflicts =~ ^\[.*\]$ ]]; then
+					while IFS= read -r cmp; do rslt+=("$cmp"); done < <(echo "${flag_conflicts:1:-1}" | tr ',' '\n')
+				else
+					rslt=("$flag_conflicts")
+				fi
+				export "flag_${flag_long}_conflicts"="${rslt[*]}"
+			elif [[ $part == multiple:* ]]; then
+				flag_multiple=${part#*:}
+				export "flag_${flag_long}_multiple"="$flag_multiple"
+				arg_name="flag_${flag_long}_arg"
+				export -a "flag_arg_$arg_name"
+			fi
+		done
+		if [[ -n "$flag_long" ]] && [[ -n "$flag_help" ]]; then
+			LOADED_FLAGS_HELPS+=("$flag_long:$flag_help")
+			longuest_arg_name_length=$(($((${#flag_long} + 2)) > longuest_arg_name_length ? $((${#flag_long} + 2)) : longuest_arg_name_length))
+		fi
+	done
+}
+
+# Load arguments and flags provided to the script.
+load_args() {
+	# travel gived script ags and flags
+	arg_count=0
+	while [[ $# -gt 0 ]]; do
+		arg="$1"
+		if [[ $arg == '--help' ]] || [[ $arg == '-h' ]]; then
+			shift
+			continue
+		fi
+
+		# Convert short args to long flag
+		if [[ $arg == -* ]] && [[ $arg != --* ]]; then
+			local short_name="${arg#-}"
+			length=${#short_name}
+			if [[ $length -gt 1 ]]; then
+				single_flags=()
+				for ((i = 0; i < ${#short_name}; i++)); do
+					single_flags+=("-${short_name:i:1}")
+				done
+				load_args "${single_flags[@]}"
+				shift
+				continue
+			fi
+
+			local flag_short_name="flag_${short_name}"
+			local flag_long_name="flag_${!flag_short_name}"
+			if [[ -n "${!flag_short_name}" ]]; then
+				arg="--${flag_long_name}"
+			else
+				error "Unknown flag $arg"
+				exit 1
+			fi
+		fi
+
+		# load flag anv values if is needed
+		if [[ $arg == --* ]]; then
+			local flag_name="${arg#--}"
+			local flag_var_name="flag_${flag_name}"
+			local flag_arg_name="flag_${flag_name}_arg"
+			flag_arg_name="flag_arg_${!flag_arg_name}"
+			local flag_default_name="flag_${flag_name}_default"
+			local flag_multiple_name="flag_${flag_name}_multiple"
+			export "$flag_var_name"=true
+			multiple=false
+
+			if [[ -n "${!flag_multiple_name}" ]] && [[ -n "${!flag_multiple_name}" ]]; then
+				multiple=true
+			fi
+
+			if [[ -n "${!flag_arg_name}" ]]; then
+				val_to_arg="$2"
+				if [[ $arg == --* ]] || [[ $arg == -* ]]; then
+					if [[ -z "$flag_default_name" ]]; then
+						error "Flag $flag_name require an argument"
+					else
+						val_to_arg="$flag_default_name"
+					fi
+				else
+					shift
+				fi
+				if [[ $multiple == true ]]; then
+					eval "${flag_arg_name}+=(\"$val_to_arg\")"
+				else
+					export "$flag_arg_name"="$val_to_arg"
+				fi
+			fi
+		else
+			export "arg_${LOADED_ARGS[$arg_count]}"="$arg"
+			arg_count=$((arg_count + 1))
+		fi
+
+		shift
+	done
+}
+
+expanded_help() {
+	echo
+	if [[ ${#LOADED_ARGS_HELPS[@]} -gt 0 ]]; then
+		echo -e "${TAB}${YELLOW}Arguments:${RESET}"
+		for arg_help in "${LOADED_ARGS_HELPS[@]}"; do
+			IFS=':' read -r -a arg_parts <<<"$arg_help"
+			arg_text="$(printf "%-${longuest_arg_name_length}s" "${arg_parts[0]}")"
+			echo -e "${TAB}${TAB}${GREEN}${arg_text}${RESET}${TAB} ${WHITE}${arg_parts[1]}${RESET}"
+		done
+	fi
+
+	if [[ ${#LOADED_FLAGS_HELPS[@]} -gt 0 ]]; then
+		echo -e "${TAB}${YELLOW}Flags:${RESET}"
+		for flag_help in "${LOADED_FLAGS_HELPS[@]}"; do
+			IFS=':' read -r -a flag_parts <<<"$flag_help"
+			arg_text="$(printf "%-${longuest_arg_name_length}s" "--${flag_parts[0]}")"
+			echo -e "${TAB}${TAB}${GREEN}${arg_text}${RESET}${TAB} ${WHITE}${flag_parts[1]}${RESET}"
+		done
+	fi
+}
+
+specific_help() {
+	echo
+
+}
+
+# expanded_help() {
+# 	echo -e "${TAB}${YELLOW}Arguments:${RESET}"
+# 	for arg_config in "${ARGS[@]}"; do
+# 		IFS=';' read -r -a arg_parts <<<"$arg_config"
+# 		for part in "${arg_parts[@]}"; do
+# 			if [[ $part == name:* ]]; then
+# 				arg_name=${part#*:}
+# 			elif [[ $part == help:* ]]; then
+# 				arg_help=${part#*:}
+# 			fi
+# 		done
+# 		required=$([[ $part == required:* ]] && echo "${MAGENTA}req${RESET} " || echo "")
+# 		echo -e "${TAB}${TAB}${GREEN}$arg_name: ${required}${WHITE}$arg_help${RESET}"
+# 	done
+
+# 	echo -e "${TAB}${YELLOW}Flags:${RESET}"
+# 	for flag_config in "${FLAGS[@]}"; do
+# 		IFS=';' read -r -a flag_parts <<<"$flag_config"
+# 		for part in "${flag_parts[@]}"; do
+# 			if [[ $part == long:* ]]; then
+# 				flag_long=${part#*:}
+# 			elif [[ $part == help:* ]]; then
+# 				flag_help=${part#*:}
+# 			fi
+# 		done
+# 		required=$([[ $part == required:* ]] && echo "${MAGENTA}req${RESET} " || echo "")
+# 		# conflicts=$([[ $part == conflicts:* ]] && echo " (${RED}${part#*:}${RESET})" || echo "")
+# 		# type=$([[ $part == type:* ]] && echo " (${GREEN}${part#*:}${RESET})" || echo "")
+# 		echo -e "${TAB}${TAB}${BLUE}--$flag_long: ${required}${WHITE}$flag_help${RESET}"
+# 	done
+# }
+
+# specific_help() {
+# 	# show just the args and flags sended
+
+# 	echo -e "${TAB}${YELLOW}Arguments:${RESET}"
+# 	for arg_config in "${ARGS[@]}"; do
+# 		IFS=';' read -r -a arg_parts <<<"$arg_config"
+# 		arg_name=""
+# 		arg_help=""
+# 		for part in "${arg_parts[@]}"; do
+# 			if [[ $part == name:* ]]; then
+# 				arg_name=${part#*:}
+# 			elif [[ $part == help:* ]]; then
+# 				arg_help=${part#*:}
+# 			fi
+# 		done
+# 		if [[ -n "$arg_name" ]] && [[ -n "$arg_help" ]]; then
+# 			echo -e "k"
+# 			for arg_sent in "$@"; do
+# 				if [[ "$arg_sent" == "--$arg_name" ]]; then
+# 					required=$([[ $part == required:true ]] && echo "${MAGENTA}req${RESET} " || echo "")
+# 					echo -e "${TAB}${TAB}${GREEN}$arg_name: ${required}${WHITE}$arg_help${RESET}"
+# 					break
+# 				fi
+# 			done
+# 		fi
+# 	done
+
+# 	return
+# }
+
+# run() {
+# 	local args=()
+# 	local flags=()
+
+# 	for arg_config in "${ARGS[@]}"; do
+# 		IFS=';' read -r -a arg_parts <<<"$arg_config"
+# 		for part in "${arg_parts[@]}"; do
+# 			if [[ $part == name:* ]]; then
+# 				arg_name=${part#*:}
+# 				args+=("arg_$arg_name")
+# 			fi
+# 		done
+# 	done
+
+# 	for flag_config in "${FLAGS[@]}"; do
+# 		IFS=';' read -r -a flag_parts <<<"$flag_config"
+# 		for part in "${flag_parts[@]}"; do
+# 			if [[ $part == long:* ]]; then
+# 				flag_long=${part#*:}
+# 				flags+=("flag_$flag_long")
+# 			fi
+# 		done
+# 	done
+
+# 	# TODO:
+# 	# Validate if the args and flags required exists
+# 	# Validate if the args and flags conflicts exists
+# 	# Validate if the args and flags types
+
+# 	# Find the default values and if the
+
+# 	# Command implementation using recognized arguments and flags
+# 	echo "Running $COMMAND"
+# 	echo "Arguments: ${args[*]}"
+# 	echo "Flags: ${flags[*]}"
+# 	echo "UWU"
+# 	echo "done"
+# }
+
+# echo "CommandInterface: $@"
+# # Argumentos de entrada
+# input_args=("$@")
+# input="${input_args[*]}"
+# input=$(echo "$input" | sed -E 's/([-][a-zA-Z0-9]+) ([a-zA-Z0-9]+)/\1=\2/g')
+# input=$(echo "$input" | sed -E 's/([-]{2}[a-zA-Z0-9]+) ([a-zA-Z0-9]+)/\1=\2/g')
+# echo "$input"
+
+make_declarations
+load_args "$@"
+## check if args is 0 and has required args or flags
+
+# Extended help
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+	expanded_help
+elif [[ $* == *--help* ]]; then
+	specific_help "$@"
+# else
+#     run "$@"
 fi
 
 # TODO
+# [ ] show the all help with expand help
+# [ ] show the specific help to provided args and flags
 # [ ] try to run expand helper, to show all available args in the command
 # [ ] run with 0 args to find if has required args
 # [ ] run with args
