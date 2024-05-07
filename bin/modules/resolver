@@ -58,7 +58,7 @@ call_command_help() {
         echo -e "${TAB}${BOLD}${YELLOW}${actual_module_ref}${RESET}"
     fi
     command_file="$(resolve_module "$command")"
-    command_help_text="$(sh "$command_file" -h)"
+    command_help_text="$(sh "$command_file" -ch)"
     command_text="$(printf "%-${longest}s" "$command")"
     echo -e "${TAB}${TAB} ${GREEN}${command_text}${RESET}${TAB} $command_help_text${RESET}"
 }
@@ -67,13 +67,15 @@ call_command_help() {
 call_command_run() {
     command=$1
     shift
-    # args=("$@")
     # echo "Running $command with args: ${args[*]}"
     command_file="$(resolve_module "$command")"
+
     if [ ! -f "$command_file" ]; then
         echo -e "${RED}Command not found:${RESET}${BOLD} $command${RESET}"
         echo -e "Try ${BOLD}ivorytcli [--help|-h]${RESET} for a list of available commands"
         exit 1
     fi
-    # sh "$command_file" -r "$@" 
+    echo -e "${BOLD}Running:${RESET} ${BLUE}$command${RESET}"
+
+    sh "$command_file" -cr "$@" 
 }

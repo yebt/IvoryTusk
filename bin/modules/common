@@ -36,21 +36,3 @@ find_longest() {
 
 IVORYTCLI_VERSION="$(cat "$IVORYTCLI_WORKDIR/modules/VERSION" 2>/dev/null)"
 export IVORYTCLI_VERSION
-
-## Common Colors
-
-GRAY='\033[0;37m'
-YELLOW='\033[0;33m'
-GREEN='\033[0;32m'
-CYAN='\033[0;36m'
-BLUE='\033[0;34m'
-MAGENTA='\033[0;35m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
-
-BOLD='\e[1m'
-ITALIC='\e[3m'
-
-RESET='\e[0m'
-
-TAB="  "
