@@ -1,0 +1,12 @@
+#!/bin/env bash
+
+# --------------------------------------------------------
+# This file resolve all modules aviables and the commands 
+# inside them
+# --------------------------------------------------------
+
+
+show_commands_help() {
+    
+    echo "Available commands:..."
+}
