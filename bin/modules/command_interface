@@ -1,0 +1,6 @@
+#!/bin/env bash
+
+# --------------------------------------------------------
+# This file is an abstraction of the interface for the
+# commands files
+# --------------------------------------------------------
