@@ -4,3 +4,11 @@
 # This file is an abstraction of the interface for the
 # commands files
 # --------------------------------------------------------
+
+
+
+# TODO:
+# - [ ] General command help, this just show the command purpose
+# - [ ] Expanded help, show the command purpose and all aviable args and flags
+# - [ ] Specific help. show the help abot the provided args or flags
+# - [ ] Run: execute the command
