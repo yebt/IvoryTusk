@@ -1,12 +1,61 @@
 #!/bin/env bash
 
 # --------------------------------------------------------
-# This file resolve all modules aviables and the commands 
+# This file resolve all modules aviables and the commands
 # inside them
 # --------------------------------------------------------
 
+# --------------------------------------------------------
+declare -a MODULES=() # modules of commands
+# --------------------------------------------------------
+
+# Resolves all modules and their commands.
+#
+# This function searches for all modules and their commands inside them. It iterates over each file
+# found in the "$WORKDIR/commands" directory and extracts the filename, relative path to the module,
+# container directory name, and command name. If the container directory name is not empty, it appends
+# it to the command name separated by a colon. The command name and relative path to the module are then
+# added to the MODULES array.
+#
+# Parameters:
+#   None
+#
+# Returns:
+#   None
+resolve_all_modules() {
+    root_dir="$WORKDIR/commands"
+    # check if the commands directory exists
+    if [ ! -d "$root_dir" ]; then
+        error "Commands directory not found"
+        exit 1
+    fi
+    while IFS= read -r file; do
+        local filename
+        local relative_path_to_module
+        local container_dirname
+        local COMMAND_NAME
+
+        filename=$(basename "$file" .sh)
+        relative_path_to_module="${file#"$root_dir"/}"
+        container_dirname="$(dirname "$relative_path_to_module")"
+        COMMAND_NAME="$filename"
+        if [ "$container_dirname" != "." ]; then
+            COMMAND_NAME="$container_dirname:$filename"
+        fi
+
+        MODULES+=("$COMMAND_NAME;$relative_path_to_module")
+    done < <(find "$root_dir" -maxdepth 2 -type f -name "*.sh")
+}
+# --------------------------------------------------------
+
+resolve_all_modules
 
 show_commands_help() {
-    
-    echo "Available commands:..."
+
+    echo 
+    if [ "${#MODULES[@]}" -eq 0 ]; then
+        error "No commands found" "Need create a command in the 'commands' directory"
+        exit 1
+    fi
+    show_param_title "Available commands:"
 }
