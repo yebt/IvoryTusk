@@ -6,13 +6,14 @@ set -euo pipefail
 
 DEBUG=1
 
-CLI_NAME='IvoryTusk CLI'
+CLI_TITLE='IvoryTusk CLI'
 CLI_PURPOSE="Manage the envs of laravel like laragon but with just an a CLI"
 
+CLI_NAME_COMMAND="basename \$0"
 CLI_VERSION_COMMAND="cat \$WORKDIR/VERSION"
 # --------------------------------------------------------
 
-WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 export WORKDIR
 
 # --------------------------------------------------------
@@ -20,15 +21,35 @@ export WORKDIR
 . "$WORKDIR"/modules/dependencies
 . "$WORKDIR"/modules/common
 . "$WORKDIR"/modules/colors
+. "$WORKDIR"/modules/resolver
 
+CLI_NAME=$(eval "$CLI_NAME_COMMAND")
 CLI_VERSION=$(eval "$CLI_VERSION_COMMAND")
 
 # --------------------------------------------------------
 
+cli_help() {
+    title "$CLI_TITLE"
+    subtitle "${ITALIC}$CLI_PURPOSE"
+    show_param "Version:" "$CLI_VERSION"
+    echo
+    show_param "Usage:" "$CLI_NAME [command]"
+    echo
+}
+
+# --------------------------------------------------------
+
+if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+    cli_help
+    [ "$#" -eq 0 ] && exit 1
+    exit 0
+fi
+
+# --------------------------------------------------------
 
 # TODO:
 # - [ ] Show a generic help
-# - [ ] Create a command interface, as an interface to interact with the artisan or other containers 
+# - [ ] Create a command interface, as an interface to interact with the artisan or other containers
 # - [ ] Add the support to `hosts.d` directory, to add a virtual domains
 
 # TODO COMMANDS:
