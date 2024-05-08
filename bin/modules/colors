@@ -74,6 +74,10 @@ error() {
     fi
 }
 
+nl() {
+    echo
+}
+
 debug() {
     if [ -n "$DEBUG" ] && [ "$DEBUG" -eq 1 ]; then
         echo -e "${WHITE}${CYAN}[$(date +%H:%M:%S)]${CYAN}${ITALIC}Log: ${RESET}${GRAY}$*${RESET}"

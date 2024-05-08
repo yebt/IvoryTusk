@@ -33,7 +33,7 @@ CLI_VERSION=$(eval "$CLI_VERSION_COMMAND")
 cli_help() {
     title "$CLI_TITLE - ${GREEN}$CLI_NAME${RESET} - $CLI_VERSION"
     subtitle "${ITALIC}$CLI_PURPOSE"
-    echo
+    nl
     show_param_title "Usage:" "$CLI_NAME [command] [options]"
     show_commands_help
 }
