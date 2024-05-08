@@ -51,6 +51,6 @@ error() {
 
 debug() {
     if [ -n "$DEBUG" ] && [ "$DEBUG" -eq 1 ]; then
-        echo -e "${CYAN}${ITALIC}[$(date +%H:%M:%S)]Log: ${RESET}${GRAY}$1${RESET}"
+        echo -e "${CYAN}${ITALIC}[$(date +%H:%M:%S)]Log: ${RESET}${GRAY}$*${RESET}"
     fi
 }
