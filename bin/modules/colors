@@ -56,6 +56,15 @@ show_param() {
     echo -e "${BOLD}$param${RESET}" "$@"
 }
 
+show_param_title() {
+    param="$1"
+    shift
+    echo -e " ${YELLOW}$param${RESET}"
+    if [ -n "$1" ]; then
+        echo -e "${TAB}${TAB}$*"
+    fi 
+}
+
 error() {
     echo -e "${RED}${BOLD}ERROR: ${RESET}${RED}$1$RESET"
     if [ -n "$2" ]; then
