@@ -33,7 +33,6 @@ cli_help() {
     subtitle "${ITALIC}$CLI_PURPOSE"
     echo
     show_param_title "Usage:" "$CLI_NAME [command] [options]"
-    echo
     show_commands_help
 }
 
