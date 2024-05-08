@@ -48,3 +48,9 @@ error() {
         echo -e "|${TAB}$2"
     fi
 }
+
+debug() {
+    if [ -n "$DEBUG" ] && [ "$DEBUG" -eq 1 ]; then
+        echo -e "${CYAN}${ITALIC}[$(date +%H:%M:%S)]Log: ${RESET}${GRAY}$1${RESET}"
+    fi
+}
