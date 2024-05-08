@@ -7,6 +7,9 @@
 
 # --------------------------------------------------------
 declare -a MODULES=() # modules of commands
+declare LONGUEST_COMMAND_NAME=0
+declare COMMANDS_DIR="$WORKDIR/commands"
+declare HELP_SEPARATOR_LENGTH=10
 # --------------------------------------------------------
 
 # Resolves all modules and their commands.
@@ -23,7 +26,7 @@ declare -a MODULES=() # modules of commands
 # Returns:
 #   None
 resolve_all_modules() {
-    root_dir="$WORKDIR/commands"
+    root_dir="$COMMANDS_DIR"
     # check if the commands directory exists
     if [ ! -d "$root_dir" ]; then
         error "Commands directory not found"
@@ -44,6 +47,9 @@ resolve_all_modules() {
         fi
 
         MODULES+=("$COMMAND_NAME;$relative_path_to_module")
+        if [ "${#COMMAND_NAME}" -gt "$LONGUEST_COMMAND_NAME" ]; then
+            LONGUEST_COMMAND_NAME="${#COMMAND_NAME}"
+        fi
     done < <(find "$root_dir" -maxdepth 2 -type f -name "*.sh")
 }
 # --------------------------------------------------------
@@ -51,11 +57,18 @@ resolve_all_modules() {
 resolve_all_modules
 
 show_commands_help() {
-
-    echo 
+    nl
     if [ "${#MODULES[@]}" -eq 0 ]; then
         error "No commands found" "Need create a command in the 'commands' directory"
         exit 1
     fi
     show_param_title "Available commands:"
+    for module in "${MODULES[@]}"; do
+        IFS=";" read -r -a module_parts <<<"$module"
+        COMMAND_NAME="${module_parts[0]}"
+        COMMAND_PATH="${module_parts[1]}"
+        COMMAND_HELP_TEXT="$(sh "$COMMANDS_DIR/$COMMAND_PATH" --min-help)"
+
+        show_aligned_help_message "$COMMAND_NAME " "$((LONGUEST_COMMAND_NAME + HELP_SEPARATOR_LENGTH))" "$COMMAND_HELP_TEXT" "."
+    done
 }
