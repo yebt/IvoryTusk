@@ -63,9 +63,8 @@ show_commands_help() {
         exit 1
     fi
 
- 
     actual_module_name=""
-                show_param_title "Available commands:"
+    show_param_title "Available commands:"
 
     for module in "${MODULES[@]}"; do
         IFS=";" read -r -a module_parts <<<"$module"
