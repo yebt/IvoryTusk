@@ -52,9 +52,7 @@ resolve_all_modules() {
         fi
     done < <(find "$root_dir" -maxdepth 2 -type f -name "*.sh")
 }
-# --------------------------------------------------------
 
-resolve_all_modules
 
 show_commands_help() {
     nl
@@ -89,4 +87,9 @@ show_commands_help() {
         COMMAND_HELP_TEXT="$(sh "$WORKDIR/modules/command_handler" "$COMMAND_PATH" --command-help)"
         show_aligned_help_message "$COMMAND_NAME " "$((LONGUEST_COMMAND_NAME + HELP_SEPARATOR_LENGTH))" "$COMMAND_HELP_TEXT" "."
     done
+    nl
 }
+
+# --------------------------------------------------------
+
+resolve_all_modules
