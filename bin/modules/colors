@@ -46,6 +46,16 @@ subtitle() {
     echo -e "$GRAY$1$RESET"
 }
 
+show () {
+    echo -e "$1"
+}
+
+show_param() {
+    param="$1"
+    shift
+    echo -e "${BOLD}$param${RESET}" "$@"
+}
+
 error() {
     echo -e "${RED}${BOLD}ERROR: ${RESET}${RED}$1$RESET"
     if [ -n "$2" ]; then
