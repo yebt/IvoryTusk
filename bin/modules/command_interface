@@ -5,16 +5,30 @@
 # commands files
 # --------------------------------------------------------
 
-min_help() {
-    echo -e "Minimal Help"
+declare COMMAND_HELP_TEXT=${COMMAND_HELP_TEXT:-}
+declare -a ARGUMENTS=${ARGUMENTS:-()}
+declare -a FLAGS=${FLAGS:-()}
+
+# --------------------------------------------------------
+
+
+command_help() {
+    if [ -n "$COMMAND_HELP_TEXT" ]; then
+        show "$COMMAND_HELP_TEXT"
+    else 
+        warning "Command help not found" "Please, set the 'COMMAND_HELP_TEXT' variable"
+    fi
 }
 
+# --------------------------------------------------------
 
 # Show minimal help
-if [ "$#" -eq 0 ] || [ "$1" == "--min-help" ]; then
-    min_help
+if [ "$#" -eq 0 ] || [ "$1" == "--command-help" ]; then
+    command_help
     exit 0
 fi
+
+
 # TODO:
 # - [ ] General command help, this just show the command purpose
 # - [ ] Expanded help, show the command purpose and all aviable args and flags
