@@ -1,31 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/env bash
 
-# Config
-## ----------------------------------
-set -e
+set -euo pipefail
 
-IVORYTCLI_WORKDIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# --------------------------------------------------------
 
-COMMANDS_DIR="$IVORYTCLI_WORKDIR/commands"
+WORKDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+export WORKDIR
 
-export IVORYTCLI_WORKDIR
+# --------------------------------------------------------
 
-# shellcheck source=/dev/null
-. "$IVORYTCLI_WORKDIR/modules/dependencies" # check dependencies
-. "$IVORYTCLI_WORKDIR/modules/colors" # check dependencies
-. "$IVORYTCLI_WORKDIR/modules/common" # load common functions and vars
-. "$IVORYTCLI_WORKDIR/modules/resolver" # load resolver functions
-. "$IVORYTCLI_WORKDIR/modules/helper" # load helper functions
+. "$WORKDIR"/modules/dependencies
+. "$WORKDIR"/modules/common
+. "$WORKDIR"/modules/colors
 
-# Funcntions
-## ----------------------------------
+# --------------------------------------------------------
 
 
-# Calls
-## ----------------------------------
-
-if [ "$#" -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
-    cli_help
-fi
-
-call_command_run "$@"
