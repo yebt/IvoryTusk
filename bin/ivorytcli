@@ -1,6 +1,8 @@
 #!/bin/env bash
 
-set -euo pipefail
+set -e # fail fast
+set -u # fail on unset variables
+set -o pipefail # fail on pipe errors
 
 # --------------------------------------------------------
 
