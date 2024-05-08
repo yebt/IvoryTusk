@@ -5,8 +5,16 @@
 # commands files
 # --------------------------------------------------------
 
+min_help() {
+    echo -e "Minimal Help"
+}
 
 
+# Show minimal help
+if [ "$#" -eq 0 ] || [ "$1" == "--min-help" ]; then
+    min_help
+    exit 0
+fi
 # TODO:
 # - [ ] General command help, this just show the command purpose
 # - [ ] Expanded help, show the command purpose and all aviable args and flags
