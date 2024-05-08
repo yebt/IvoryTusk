@@ -127,13 +127,32 @@ nl() {
 
 # --------------------------------------------------------
 
-error() {
+alert() {
+    color_to_use="$1"
+    shift
+    bg_to_use="${1:-RESET}"
+    shift
+    prefix="$1"
+    shift
+    alert_text="$1"
+    shift
     message="$1"
     shift
-    echo -e "${RED}${BOLD}ERROR: ${RESET}${RED}${message}$RESET"
+    prefix_to_show="$([ -n "$prefix" ] && echo -e "[$prefix]")"
+    echo
+    echo -e "  ${bg_to_use} ${prefix_to_show}${alert_text} ${RESET} ${color_to_use}${message}${RESET}"
     if [ -n "$*" ]; then
-        echo -e "|${TAB}$*"
+        echo -e "  ${GRAY}|${RESET}${TAB}$*"
     fi
+    echo "  ${GRAY}--${RESET}"
+}
+
+error() {
+    alert "$RED" "$BG_RED" "" "ERROR" "$@"
+}
+
+warning() {
+    alert "$ORANGE" "$BG_ORANGE" "" "WARNING" "$@"
 }
 
 debug() {
