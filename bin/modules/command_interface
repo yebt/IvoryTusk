@@ -106,7 +106,21 @@ config_args_and_flags() {
                 error "Argument name not found"
                 exit 1
             fi
-            declare "arg_${argument_name}_${config_name}"="${config_value}"
+            if [ "$config_name" == "repeatable" ]; then
+                if [[ $config != "repeatable:false" ]]; then
+                    config_value=true
+                else 
+                    config_value=""
+                fi
+            fi
+            if [ "$config_name" == "required" ]; then
+                if [[ $config != "required:false" ]]; then
+                    config_value=true
+                else 
+                    config_value=""
+                fi
+            fi
+            export "arg_${argument_name}_${config_name}"="${config_value}"
         done
         CONFIFURED_ARGS+=("$argument_name")
     done
@@ -127,6 +141,20 @@ config_args_and_flags() {
                 error "Flag 'name' not found, check the order of attributes"
                 exit 1
             fi
+            if [ "$config_name" == "repeatable" ]; then
+                if [[ $config != "repeatable:false" ]]; then
+                    config_value=true
+                else 
+                    config_value=""
+                fi
+            fi
+            if [ "$config_name" == "required" ]; then
+                if [[ $config != "required:false" ]]; then
+                    config_value=true
+                else 
+                    config_value=""
+                fi
+            fi
             if [ "$config_name" == "short" ]; then
                 export "flag_${config_value}_short_to_long"="$flag_name"
             fi
@@ -146,6 +174,7 @@ load_params() {
         exit 0
     fi
 
+    arguments_count=0
     # load the params
     while [ "$#" -gt 0 ]; do
         param="$1"
@@ -204,7 +233,7 @@ load_params() {
                     local flag_choices_var_value="${!flag_choices_var_name}"
                     # remove []
                     flag_choices_var_value="${flag_choices_var_value:1:-1}"
-                    local choises_array=(${flag_choices_var_value//,/ })
+                    local choises_array=("${flag_choices_var_value//,/ }")
                     if [[ ! "${choises_array[*]}" =~ $flag_input_value ]]; then
                         alloed_choices="${choises_array[*]}"
                         error "Flag '$flag_name' value '$flag_input_value' not valid" "Allowed values: $alloed_choices"
@@ -227,7 +256,46 @@ load_params() {
                     export "$flag_arg_to_save_name"="$flag_input_value" # export
                 fi
             fi
+        else
 
+            # check if the count is greater than the number of arguments
+            if [ "$arguments_count" -ge "${#CONFIFURED_ARGS[@]}" ]; then
+                error "Too many arguments" "Use '--help' for more info"
+                exit 1
+            fi
+
+            # is a argument
+            local argument_name="${CONFIFURED_ARGS[$arguments_count]}"
+            local arg_var_name="arg_${argument_name}"
+
+            ## validate the value with choices
+            local arg_choices_var_name="arg_${argument_name}_choices"
+            if [ -n "${!arg_choices_var_name}" ]; then
+                local arg_choices_var_value="${!arg_choices_var_name}"
+                # remove []
+                arg_choices_var_value="${arg_choices_var_value:1:-1}"
+                local choises_array=("${arg_choices_var_value//,/ }")
+                if [[ ! "${choises_array[*]}" =~ $param ]]; then
+                    alloed_choices="${choises_array[*]}"
+                    error "Argument '$argument_name' (Argunnt number $((arguments_count + 1))) value '$param' not valid" "Allowed values: $alloed_choices"
+                    exit 1
+                fi
+            fi
+
+            # if the arguments is repeatable, add the value to the array
+            local arg_repeatable_var_name="arg_${argument_name}_repeatable"
+            
+            if [ -n "${!arg_repeatable_var_name}" ]; then
+                if [ -z "${!arg_var_name}" ]; then
+                    eval "$arg_var_name=()"
+                    export "${arg_var_name?}" # export
+                fi
+                eval "$arg_var_name+=(\"$param\")"
+                export "${arg_var_name?}" # export
+            else
+                export "$arg_var_name"="$param"
+                arguments_count=$((arguments_count + 1))
+            fi
         fi
         shift
     done
