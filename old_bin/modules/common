@@ -1,8 +1,0 @@
-#!/bin/env bash
-
-export DEBUG=1
-
-trim() {
-    local str_to_trim="$1"
-    echo -e "$str_to_trim" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
-}
