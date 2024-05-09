@@ -1,28 +1,31 @@
 #!/bin/env bash
 
-HANLDER_WORKDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
-# --------------------------------------------------------
-. "$HANLDER_WORKDIR"/colors
-
 # --------------------------------------------------------
 
-command_to_handle="$1"
+# shellcheck source=/dev/null
+. "$WORKDIR"/modules/colors
+# shellcheck source=/dev/null
+. "$WORKDIR"/modules/common
+
+# --------------------------------------------------------
+
+command_to_handle_path="$1"
 shift
-if [ -z "$command_to_handle" ]; then
+if [ -z "$command_to_handle_path" ]; then
     error "No command provided" "Need to provide a command to handle"
     exit 1
 fi
-command_file_to_handle="$HANLDER_WORKDIR/../commands/$command_to_handle"
+
+command_file_to_handle="$WORKDIR/commands/$command_to_handle_path"
 if [ ! -f "$command_file_to_handle" ]; then
-    error "Command not found" "Command '$command_to_handle' not found"
+    error "Command not found" "Command '$command_to_handle_path' not found"
     exit 1
 fi
 
 # --------------------------------------------------------
 
 # shellcheck source=/dev/null
-source "$HANLDER_WORKDIR/../commands/$command_to_handle"
+source "$WORKDIR/commands/$command_to_handle_path"
 
 # load the interface
-source "$HANLDER_WORKDIR/command_interface"
+source "$WORKDIR/modules/command_interface"

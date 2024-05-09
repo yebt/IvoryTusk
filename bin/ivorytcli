@@ -6,7 +6,6 @@ set -o pipefail # fail on pipe errors
 
 # --------------------------------------------------------
 
-DEBUG=1
 
 CLI_TITLE='IvoryTusk CLI'
 CLI_PURPOSE="Manage the envs of laravel like laragon but with just an a CLI"
@@ -40,23 +39,18 @@ cli_help() {
 
 # --------------------------------------------------------
 
+# catch help
 if [ "$#" -eq 0 ] || [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
     cli_help
     [ "$#" -eq 0 ] && exit 1
     exit 0
 fi
 
+# catch other commands
+input_command="$1"
+shift
+handle_command "$input_command" "$@"
+
 # --------------------------------------------------------
 
-# TODO:
-# - [ ] Show a generic help
-# - [ ] Create a command interface, as an interface to interact with the artisan or other containers
-# - [ ] Add the support to `hosts.d` directory, to add a virtual domains
 
-# TODO COMMANDS:
-# - [ ] Create a new dev environment
-# - [ ] Remove a dev environment
-# - [ ] Start a dev environment
-# - [ ] Stop a dev environment
-# - [ ] Restart a dev environment
-# - [ ] show status of dev environment

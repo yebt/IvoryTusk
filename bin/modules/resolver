@@ -53,7 +53,6 @@ resolve_all_modules() {
     done < <(find "$root_dir" -maxdepth 2 -type f -name "*.sh")
 }
 
-
 show_commands_help() {
     nl
     if [ "${#MODULES[@]}" -eq 0 ]; then
@@ -90,6 +89,27 @@ show_commands_help() {
     nl
 }
 
+handle_command() {
+    local input_command="$1"
+    shift
+    command_found=""
+    command_found_path=""
+    for module in "${MODULES[@]}"; do
+        IFS=";" read -r -a module_parts <<<"$module"
+        COMMAND_NAME="${module_parts[0]}"
+        if [ "$COMMAND_NAME" == "$input_command" ]; then
+            command_found="$COMMAND_NAME"
+            command_found_path="${module_parts[1]}"
+            break
+        fi
+    done
+    if [ -z "$command_found" ] || [ "$command_found" == "" ]; then
+        error "Command not found" "'$input_command' is not a valid command, use --help for more information"
+        exit
+    fi
+    title "Running ${BLUE}$command_found"
+    sh "$WORKDIR/modules/command_handler" "$command_found_path" "$@"
+}
 # --------------------------------------------------------
 
 resolve_all_modules
