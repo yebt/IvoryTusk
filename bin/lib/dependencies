@@ -1,0 +1,15 @@
+#!/bin/env bash
+
+# OS
+UNAMEOUT="$(uname -s)"
+if [ "${UNAMEOUT}" != "Linux" ] && [ "${UNAMEOUT}" != "Darwin" ]; then
+    echo "Unsupported os: [${UNAMEOUT}]" >&2
+    exit 1
+fi
+
+# gum
+if ! command -v gum &>/dev/null; then
+    echo "gum is not installed :C"
+    echo "see: https://github.com/charmbracelet/gum"
+    exit 1
+fi

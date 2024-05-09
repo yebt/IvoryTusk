@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+export CLI_TITLE="Ivory Tusk CLI"
+export CLI_DESC="CLI to try use a docker in dev project"
+export CLI_NAME="ivorycli"
+CLI_VERSION="$(cat "$SCRIPT_DIR"/VERSION 2>/dev/null)"
+export CLI_VERSION

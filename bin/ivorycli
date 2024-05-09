@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+. "$SCRIPT_DIR/lib/dependencies"
+. "$SCRIPT_DIR/lib/common"
+. "$SCRIPT_DIR/lib/printer"
+
+function cli_help() {
+    title_1 "$CLI_TITLE${NC} - $CLI_NAME - ${GREEN}$CLI_VERSION${NC}"
+    subtitle "${ITALIC}$CLI_DESC"
+    nl
+    title_2 "Usage:"
+    show "${TAB}${CLI_NAME} [command] [options]"
+    show "${TAB}${GRAY}The know commands are passed to container manager${NC}"
+    nl
+    exit 1
+}
+
+# catch help
+if [ $# -eq 0 ] ||
+   [ "$1" == "help" ] || [ "$1" == "-h" ] || [ "$1" == "-help" ] || [ "$1" == "--help" ]; then
+    cli_help
+fi
+
