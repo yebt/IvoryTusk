@@ -11,6 +11,8 @@ declare -a FLAGS=${FLAGS:-()}
 
 # --------------------------------------------------------
 declare -a CONFIFURED_ARGS=()
+declare -a CONFIFURED_REQUIRED_ARGS=()
+declare -a CONFIFURED_REQUIRED_FLAGS=()
 # declare -a CONFIFURED_FLAGS=()
 # --------------------------------------------------------
 
@@ -82,8 +84,13 @@ command_complete_help() {
     show_param_title "Flags:"
     for flag in "${FLAGS[@]}"; do
         flag_name="$(echo "$flag" | grep -Po "(?<=long:)[^;]+")"
+        flag_short="$(echo "$flag" | grep -Po "(?<=short:)[^;]+")"
         flag_help="$(echo "$flag" | grep -Po "(?<=help:)[^;]+")"
-        show_aligned_help_message "$flag_name" "20" "$flag_help" "."
+        first_part="--$flag_name"
+        if [ -n "$flag_short" ]; then
+            first_part="$first_part, -$flag_short"
+        fi
+        show_aligned_help_message "$first_part" "23" "$flag_help" "."
     done
 }
 
@@ -109,14 +116,15 @@ config_args_and_flags() {
             if [ "$config_name" == "repeatable" ]; then
                 if [[ $config != "repeatable:false" ]]; then
                     config_value=true
-                else 
+                else
                     config_value=""
                 fi
             fi
             if [ "$config_name" == "required" ]; then
                 if [[ $config != "required:false" ]]; then
                     config_value=true
-                else 
+                    CONFIFURED_REQUIRED_ARGS+=("$argument_name")
+                else
                     config_value=""
                 fi
             fi
@@ -144,14 +152,15 @@ config_args_and_flags() {
             if [ "$config_name" == "repeatable" ]; then
                 if [[ $config != "repeatable:false" ]]; then
                     config_value=true
-                else 
+                else
                     config_value=""
                 fi
             fi
             if [ "$config_name" == "required" ]; then
                 if [[ $config != "required:false" ]]; then
                     config_value=true
-                else 
+                    CONFIFURED_REQUIRED_FLAGS+=("$flag_name")
+                else
                     config_value=""
                 fi
             fi
@@ -284,7 +293,7 @@ load_params() {
 
             # if the arguments is repeatable, add the value to the array
             local arg_repeatable_var_name="arg_${argument_name}_repeatable"
-            
+
             if [ -n "${!arg_repeatable_var_name}" ]; then
                 if [ -z "${!arg_var_name}" ]; then
                     eval "$arg_var_name=()"
@@ -300,55 +309,22 @@ load_params() {
         shift
     done
 
-    # for prop in "$@"; do
-    #     # check if is a flag
-    #     if [[ "$prop" == -* ]]; then
-    #         echo "flag: $prop"
-    #         local flag_input_value=""
-    #         # separathe if has and =
-    #         if [[ "$prop" =~ = ]]; then
-    #             IFS='=' read -r -a flag_parts <<<"$prop"
-    #             prop="${flag_parts[0]}"
-    #             flag_input_value="${flag_parts[1]}"
-    #         fi
-    #         if [[ "$prop" != --* ]]; then
-    #             # convert to long flag
-    #             local short_flag_name="${prop:1}"
-    #             local long_flag_name_var="flag_${short_flag_name}_short_to_long"
-    #             local lon_flag_name="${!long_flag_name_var}"
-    #             if [ -z "$lon_flag_name" ]; then
-    #                 error "Flag '$short_flag_name' not found" "Use '--help' for more info"
-    #             fi
-    #             prop="--$lon_flag_name"
-    #         fi
-
-    #         # prop is a flag
-    #         # set the flag value in true
-    #         local flag_name="${prop:2}"
-    #         local flag_var_name="flag_${flag_name}"
-    #         export "$flag_var_name"=true
-    #         # if has an argument try save the value in the flag attrib name
-    #         local flag_arg_var_name="flag_${flag_name}_arg"
-    #         if [ -n "${!flag_arg_var_name}" ]; then
-    #             # argument exists
-    #             # check if the value is getted by = or is the next param
-    #             if [ -n "$flag_input_value" ]; then
-    #                 debug "$flag_input_value"
-    #             else
-    #                 next_param="${1}"
-    #                 debug "$next_param"
-    #             fi
-    #             # export "flag_${flag_name}_arg_${!flag_arg_var_name}"="$flag_input_value" # expor
-    #             # debug "$flag_arg_var_name ${!flag_arg_var_name}"
-    #         fi
-
-    #     fi
-
-    #     # if [[ "$prop" =~ -- ]]; then
-    # done
-
     # check if required flags exists
+    for flag in "${CONFIFURED_REQUIRED_FLAGS[@]}"; do
+        local flag_var_name="flag_${flag}"
+        if [ -z "${!flag_var_name}" ]; then
+            error "Flag '$flag' required" "Use '--help' for more info"
+            exit 1
+        fi
+    done
     # check if required args exists
+    for arg in "${CONFIFURED_REQUIRED_ARGS[@]}"; do
+        local arg_var_name="arg_${arg}"
+        if [ -z "${!arg_var_name}" ]; then
+            error "Argument '$arg' required" "Use '--help' for more info"
+            exit 1
+        fi
+    done
 
 }
 # --------------------------------------------------------
